@@ -447,30 +447,55 @@ function App(){
       ),
 
       /* ── RESULTADOS DA RODADA (professor e aluno) ── */
-      page==='session'&&screen==='round-results'&&hl&&e('div',{style:{display:'flex',flexDirection:'column',gap:18}},
-        e(SHead,{label:'Resultados · Rodada '+session.currentRound,labelCls:'tag-ok',title:'Perguntas da turma',sub:'Discutam: quais são investigáveis? Envolvem Ciências da Natureza?'}),
-        e(HeadlineCard,{h:hl}),
-        /* dica de critérios — visível apenas ao professor */
-        tab==='teacher'&&e('div',{className:'criteria-hint'},
-          e('b',null,'Como avaliar cada pergunta:'),
-          ' ',
-          e('b',null,'Investigável'),' — pode ser respondida com uma pesquisa?  ',
-          e('b',null,'Envolve CN'),' — conecta Biologia, Física ou Química?  ',
-          e('b',null,'Original'),' — vai além do óbvio da manchete?'
-        ),
-        e('div',{className:'card'},
-          e('label',null,roundAnswers.length+' pergunta'+(roundAnswers.length!==1?'s':'')+' formulada'+(roundAnswers.length!==1?'s':'')),
-          e('div',{className:'sep',style:{marginTop:10}},
-            roundAnswers.map((a,i)=>e('div',{key:a.id},
-              e(QCard,{a,num:i+1}),
-              tab==='teacher'&&e(EvalBar,{a,evals,toggleEval})
-            ))
-          )
-        ),
-        tab==='teacher'
-          ?e(Btn,{primary:true,full:true,onClick:nextRound},session.currentRound>=session.totalRounds?'Ver resumo final':'Próxima rodada ('+(session.currentRound+1)+'/'+session.totalRounds+')')
-          :e('p',{className:'info',style:{textAlign:'center'}},'Aguardando o professor avançar para a próxima rodada...')
-      ),
+      page==='session'&&screen==='round-results'&&hl&&(()=>{
+        // grupos únicos em ordem alfabética
+        const grupos=[...new Set(roundAnswers.map(a=>a.group))].sort();
+        // respostas do grupo do aluno logado
+        const respostasDoGrupo=roundAnswers.filter(a=>a.group===sGroup);
+
+        return e('div',{style:{display:'flex',flexDirection:'column',gap:18}},
+          e(SHead,{label:'Resultados · Rodada '+session.currentRound,labelCls:'tag-ok',title:'Perguntas da turma',sub:'Discutam: quais são investigáveis? Envolvem Ciências da Natureza?'}),
+          e(HeadlineCard,{h:hl}),
+
+          /* ── PROFESSOR: dica de critérios ── */
+          tab==='teacher'&&e('div',{className:'criteria-hint'},
+            e('b',null,'Como avaliar cada pergunta:'),' ',
+            e('b',null,'Investigável'),' — pode ser respondida com uma pesquisa?  ',
+            e('b',null,'Envolve CN'),' — conecta Biologia, Física ou Química?  ',
+            e('b',null,'Original'),' — vai além do óbvio da manchete?'
+          ),
+
+          /* ── PROFESSOR: um card por grupo ── */
+          tab==='teacher'&&e('div',{style:{display:'flex',flexDirection:'column',gap:14}},
+            ...grupos.map(grp=>{
+              const ans=roundAnswers.filter(a=>a.group===grp);
+              return e('div',{key:grp,className:'card'},
+                e('label',null,grp+' · '+ans.length+' pergunta'+(ans.length!==1?'s':'')+' formulada'+(ans.length!==1?'s':'')),
+                e('div',{className:'sep',style:{marginTop:10}},
+                  ans.map((a,i)=>e('div',{key:a.id},
+                    e(QCard,{a,num:i+1}),
+                    e(EvalBar,{a,evals,toggleEval})
+                  ))
+                )
+              );
+            })
+          ),
+
+          /* ── ALUNO: apenas respostas do próprio grupo ── */
+          tab==='student'&&e('div',{className:'card'},
+            e('label',null,'Respostas do '+sGroup),
+            respostasDoGrupo.length===0
+              ?e('p',{className:'info',style:{marginTop:8}},'Nenhuma resposta do seu grupo ainda.')
+              :e('div',{className:'sep',style:{marginTop:10}},
+                  respostasDoGrupo.map((a,i)=>e(QCard,{key:a.id,a,num:i+1}))
+                )
+          ),
+
+          tab==='teacher'
+            ?e(Btn,{primary:true,full:true,onClick:nextRound},session.currentRound>=session.totalRounds?'Ver resumo final':'Próxima rodada ('+(session.currentRound+1)+'/'+session.totalRounds+')')
+            :e('p',{className:'info',style:{textAlign:'center'}},'Aguardando o professor avançar para a próxima rodada...')
+        );
+      })(),
 
       /* ── PROFESSOR: RESUMO FINAL ── */
       page==='session'&&tab==='teacher'&&screen==='summary'&&e('div',{style:{display:'flex',flexDirection:'column',gap:18}},
