@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fio da Curiosidade</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.14.0/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:-apple-system,'Segoe UI',system-ui,sans-serif;font-size:15px;background:#f8f8f7;color:#1a1a19}
+#root{min-height:100vh}
+.nav{background:#fff;border-bottom:0.5px solid #d1d0cb;padding:0 20px;display:flex;align-items:stretch;position:sticky;top:0;z-index:10}
+.nav-brand{font-size:13px;font-weight:500;color:#1D9E75;padding:0 16px 0 0;margin-right:16px;border-right:0.5px solid #d1d0cb;display:flex;align-items:center;gap:6px}
+.nav-tab{background:none;border:none;border-bottom:2px solid transparent;padding:14px 16px;font-size:13px;cursor:pointer;font-family:inherit;color:#666;transition:.15s}
+.nav-tab.active{color:#1a1a19;font-weight:500;border-bottom-color:#1D9E75}
+.nav-tab:hover:not(.active){color:#1a1a19}
+.nav-meta{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px}
+.tag-round{background:#FEF0C4;color:#7A4800;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:500}
+.tag-ok{background:#D3F4E7;color:#0A6B3A;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:500}
+.tag-danger{background:#FFECEC;color:#c00;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:500}
+.tag-code{font-family:monospace;font-size:12px;font-weight:600;color:#1D9E75;letter-spacing:.05em}
+/* cronômetro na nav */
+.nav-timer{font-family:monospace;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;padding:2px 10px;border-radius:6px;transition:background .3s,color .3s}
+.nav-timer.ok {background:#D3F4E7;color:#0A6B3A}
+.nav-timer.warn{background:#FEF0C4;color:#7A4800}
+.nav-timer.low {background:#FFECEC;color:#c00;animation:pulse .8s infinite}
+.nav-timer.done{background:#FFECEC;color:#c00}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.page{max-width:620px;margin:0 auto;padding:28px 20px;display:flex;flex-direction:column;gap:18px}
+.card{background:#fff;border:0.5px solid #d1d0cb;border-radius:12px;padding:20px}
+.card-hl{border-radius:0 12px 12px 0;border-left-width:3px;border-left-style:solid;padding-left:17px}
+.tag{display:inline-block;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:500;letter-spacing:.04em;text-transform:uppercase}
+.a-bio{background:#D3F4E7;color:#0A6B3A}
+.a-fis{background:#E0D9FA;color:#3C2D8A}
+.a-qui{background:#FEF0C4;color:#7A4800}
+.a-amb{background:#D4EDFA;color:#0B4F75}
+.a-mix{background:#F5D9F0;color:#6B2060}
+.btn{border:0.5px solid #bbb;background:#fff;border-radius:8px;padding:9px 18px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;color:#1a1a19;transition:.12s}
+.btn:hover{background:#f0f0ee}
+.btn-primary{background:#1D9E75;border-color:#1D9E75;color:#fff}
+.btn-primary:hover{background:#196e54}
+.btn-primary:disabled{background:#ccc;border-color:#ccc;color:#888;cursor:default}
+.btn-sm{padding:6px 12px;font-size:13px}
+.btn-full{width:100%}
+.btn-ghost{border-color:transparent;color:#888;font-size:13px}
+.btn-ghost:hover{background:#f0f0ee;color:#1a1a19}
+label{font-size:11px;font-weight:600;color:#888;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:5px}
+input,textarea,select{background:#f8f8f7;border:0.5px solid #ccc;border-radius:8px;padding:10px 12px;color:#1a1a19;font-size:14px;font-family:inherit;width:100%;outline:none;line-height:1.5;transition:.12s}
+input:focus,textarea:focus,select:focus{border-color:#1D9E75;box-shadow:0 0 0 2px #d3f4e780}
+textarea{resize:vertical;min-height:90px}
+select{cursor:pointer}
+.code-display{font-family:monospace;font-size:54px;font-weight:600;letter-spacing:.2em;color:#1D9E75;line-height:1;text-align:center}
+/* cronômetro grande (tela do aluno/professor durante rodada) */
+.timer-block{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 20px;border-radius:10px;transition:background .3s}
+.timer-block.ok {background:#D3F4E7}
+.timer-block.warn{background:#FEF0C4}
+.timer-block.low {background:#FFECEC;animation:pulse .8s infinite}
+.timer-block.done{background:#FFECEC}
+.timer-digits{font-family:monospace;font-size:36px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.timer-block.ok  .timer-digits{color:#0A6B3A}
+.timer-block.warn .timer-digits{color:#7A4800}
+.timer-block.low  .timer-digits,.timer-block.done .timer-digits{color:#c00}
+.timer-label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:inherit;opacity:.75}
+.q-card{background:#f8f8f7;border:0.5px solid #d1d0cb;border-radius:8px;padding:11px 14px;display:flex;gap:11px;align-items:flex-start;margin-bottom:0}
+.q-num{min-width:24px;height:24px;background:#d3f4e7;color:#0A6B3A;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.q-meta{font-size:11px;color:#888;margin-bottom:3px}
+.q-text{font-size:14px;color:#1a1a19;line-height:1.5}
+h2.screen-t{font-size:20px;font-weight:500;margin:6px 0 4px}
+p.screen-s{font-size:14px;color:#666}
+.info{font-size:13px;color:#888;line-height:1.6}
+.sep{display:flex;flex-direction:column;gap:8px}
+.stu-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid #f0f0ee}
+.stu-row:last-child{border-bottom:none}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.home-hero{text-align:center;padding:40px 0 24px}
+.home-hero i{font-size:40px;color:#1D9E75;display:block;margin-bottom:12px}
+.home-hero h1{font-size:24px;font-weight:500;margin-bottom:6px}
+.home-hero p{color:#666;font-size:14px;max-width:340px;margin:0 auto;line-height:1.6}
+.home-btns{display:flex;flex-direction:column;gap:10px;max-width:300px;margin:0 auto}
+.home-btn{background:#fff;border:0.5px solid #d1d0cb;border-radius:12px;padding:18px 20px;font-size:15px;font-weight:500;cursor:pointer;font-family:inherit;text-align:left;width:100%;display:flex;align-items:center;justify-content:space-between;color:#1a1a19;transition:.12s}
+.home-btn:hover{background:#f8f8f7;border-color:#bbb}
+.home-btn-primary{background:#1D9E75;border-color:#1D9E75;color:#fff}
+.home-btn-primary:hover{background:#196e54}
+.home-btn-sub{font-size:12px;font-weight:400;opacity:.75;display:block;margin-top:2px}
+.center-block{text-align:center;padding:32px 0;display:flex;flex-direction:column;align-items:center;gap:16px}
+.center-block i{font-size:40px;color:#bbb}
+.accent-notice{background:#d3f4e7;border:0.5px solid #1D9E75;border-radius:8px;padding:12px 14px;font-size:13px;color:#0A6B3A}
+.tags-row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.duration-row{display:flex;gap:10px;align-items:flex-end}
+.duration-row>div{flex:1}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
+'use strict';
+const {useState,useEffect,useRef,useCallback}=React;
+const e=React.createElement;
+const socket=io();
+
+/* ── Área → cor da borda ─────────────────────────────────── */
+const AC_BORDER={bio:'#1D9E75',fis:'#534AB7',qui:'#BA7517',amb:'#0F6E56',mix:'#993556'};
+
+/* ── Utilitário: formatar segundos em mm:ss ──────────────── */
+function fmtTime(s){
+  if(s==null||s<0)return null;
+  const m=Math.floor(s/60);
+  const sec=s%60;
+  return m+':'+String(sec).padStart(2,'0');
+}
+
+/* ── Classe visual do timer baseada no tempo restante ─────── */
+function timerCls(left,total){
+  if(left===null)return'';
+  if(left<=0)return'done';
+  if(left<=30)return'low';
+  if(left<=total*0.25)return'warn';
+  return'ok';
+}
+
+/* ── Componentes UI ──────────────────────────────────────── */
+function Tag({text,cls}){return e('span',{className:'tag '+cls},text);}
+function AreaTag({area,ac}){return e(Tag,{text:area,cls:'a-'+(ac||'bio')});}
+
+function HeadlineCard({h}){
+  return e('div',{className:'card card-hl',style:{borderLeftColor:AC_BORDER[h.ac||'bio']}},
+    e('div',{style:{display:'flex',gap:8,marginBottom:10,alignItems:'center',flexWrap:'wrap'}},
+      e(AreaTag,{area:h.area,ac:h.ac}),
+      e('span',{style:{fontSize:11,color:'#888'}},'Manchete · Ciências da Natureza')
+    ),
+    e('p',{style:{fontSize:17,fontWeight:500,lineHeight:1.4,color:'#1a1a19',margin:'0 0 8px'}},h.title),
+    e('p',{style:{fontSize:13,color:'#666',lineHeight:1.65,margin:0}},h.summary)
+  );
+}
+
+function QCard({a,num}){
+  return e('div',{className:'q-card'},
+    e('span',{className:'q-num'},num),
+    e('div',null,
+      e('div',{className:'q-meta'},a.studentName+' · '+a.group),
+      e('p',{className:'q-text'},a.question)
+    )
+  );
+}
+
+function SHead({label,labelCls,title,sub}){
+  return e('div',null,
+    label&&e('span',{className:labelCls||'tag-round'},label),
+    e('h2',{className:'screen-t',style:{marginTop:label?6:0}},title),
+    sub&&e('p',{className:'screen-s'},sub)
+  );
+}
+
+function Btn({children,onClick,primary,disabled,full,sm,ghost}){
+  let cls='btn';
+  if(primary)cls+=' btn-primary';
+  if(full)cls+=' btn-full';
+  if(sm)cls+=' btn-sm';
+  if(ghost)cls+=' btn-ghost';
+  return e('button',{className:cls,onClick,disabled},children);
+}
+
+/* ── Bloco visual do cronômetro ─────────────────────────── */
+function TimerBlock({timeLeft,total}){
+  const cls=timerCls(timeLeft,total);
+  const label=timeLeft===0?'Tempo esgotado!':timeLeft===null?'':fmtTime(timeLeft);
+  if(timeLeft===null)return null;
+  return e('div',{className:'timer-block '+cls},
+    timeLeft>0&&e('i',{className:'ti ti-clock','aria-hidden':true,style:{fontSize:22,opacity:.8}}),
+    e('div',null,
+      e('div',{className:'timer-digits'},label),
+      timeLeft>0&&e('div',{className:'timer-label'},'restante')
+    )
+  );
+}
+
+/* ── App ─────────────────────────────────────────────────── */
+function App(){
+  const [page,setPage]=useState('home');
+  const [tab,setTab]=useState('teacher');
+  const [tScreen,setTScreen]=useState('lobby');
+  const [sScreen,setSScreen]=useState('join');
+  const [session,setSession]=useState(null);
+  const [role,setRoleState]=useState(null);
+  const roleRef=useRef(null);
+  const [sName,setSName]=useState('');
+  const [sGroup,setSGroup]=useState('');
+  const [codeInput,setCodeInput]=useState('');
+  const [answer,setAnswer]=useState('');
+  const [answered,setAnswered]=useState(false);
+  const [connErr,setConnErr]=useState('');
+  const [duration,setDuration]=useState(180); // segundos, configurado no lobby
+  const [timeLeft,setTimeLeft]=useState(null);  // segundos restantes (calculado localmente)
+
+  /* Sync role ref */
+  const setRole=useCallback(r=>{roleRef.current=r;setRoleState(r);},[]);
+
+  /* Status → tela */
+  const T_MAP={lobby:'lobby','round-active':'monitor','round-complete':'round-results',done:'summary'};
+  const S_MAP={lobby:'waiting','round-active':'round','round-complete':'round-results',done:'final'};
+
+  /* Socket listeners */
+  useEffect(()=>{
+    socket.on('session-state',(s)=>{
+      setSession(s);
+      if(roleRef.current==='teacher') setTScreen(prev=>T_MAP[s.status]||prev);
+      if(roleRef.current==='student'){
+        setSScreen(prev=>{
+          if(prev==='join')return prev;
+          if(s.status==='round-active'&&prev==='round-results'){setAnswered(false);setAnswer('');}
+          return S_MAP[s.status]||prev;
+        });
+      }
+    });
+    socket.on('session-error',msg=>setConnErr(msg));
+    return()=>{socket.off('session-state');socket.off('session-error');};
+  },[]);
+
+  /* Cronômetro: recalcula a cada segundo quando há roundStartTime */
+  useEffect(()=>{
+    if(!session?.roundStartTime||session.status!=='round-active'){
+      setTimeLeft(null);
+      return;
+    }
+    const calc=()=>{
+      const elapsed=Math.floor((Date.now()-new Date(session.roundStartTime))/1000);
+      const left=Math.max(0,(session.roundDuration||180)-elapsed);
+      setTimeLeft(left);
+    };
+    calc(); // calcular imediatamente ao montar
+    const iv=setInterval(calc,1000);
+    return()=>clearInterval(iv);
+  },[session?.roundStartTime,session?.status,session?.roundDuration]);
+
+  /* ── Professor: criar sessão ── */
+  async function createSession(){
+    setConnErr('');
+    try{
+      const res=await fetch('/api/sessions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+      const {code}=await res.json();
+      socket.emit('join-session',{code,role:'teacher'});
+      setRole('teacher');
+      setTab('teacher');
+      setTScreen('lobby');
+      setPage('session');
+    }catch(err){setConnErr('Erro ao criar sessão. Verifique a conexão com o servidor.');}
+  }
+
+  /* ── Aluno: entrar na sessão ── */
+  async function joinSession(){
+    setConnErr('');
+    if(!sName.trim()||!sGroup.trim()||!codeInput.trim()){setConnErr('Preencha código, nome e grupo.');return;}
+    const code=codeInput.trim().toUpperCase();
+    try{
+      const res=await fetch('/api/sessions/'+code);
+      if(!res.ok){setConnErr('Sessão não encontrada. Verifique o código.');return;}
+      socket.emit('join-session',{code,role:'student',name:sName.trim(),group:sGroup.trim()});
+      setRole('student');
+      setTab('student');
+      setSScreen('waiting');
+      setPage('session');
+    }catch(err){setConnErr('Erro ao conectar. Verifique a conexão com o servidor.');}
+  }
+
+  /* ── Ações do professor ── */
+  const startActivity=()=>socket.emit('start-activity',{code:session.code,duration});
+  const showResults=()=>socket.emit('show-results',{code:session.code});
+  const nextRound=()=>socket.emit('next-round',{code:session.code});
+  const demoStudents=()=>socket.emit('add-demo-students',{code:session.code});
+  const demoAnswers=()=>socket.emit('add-demo-answers',{code:session.code});
+
+  /* ── Ação do aluno ── */
+  function submitAnswer(){
+    if(!answer.trim())return;
+    socket.emit('submit-answer',{code:session.code,studentName:sName,group:sGroup,question:answer.trim()});
+    setAnswered(true);setAnswer('');
+  }
+
+  /* ── Exportar CSV ── */
+  function exportCSV(){
+    const rows=[['Rodada','Manchete','Área','Grupo','Aluno','Pergunta','Horário']];
+    session.answers.forEach(a=>{
+      const h=session.headlines.find(h=>h.id===a.headlineId);
+      rows.push([a.round,h?.title||'',h?.area||'',a.group,a.studentName,a.question,new Date(a.ts).toLocaleTimeString('pt-BR')]);
+    });
+    const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+    const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);
+    Object.assign(document.createElement('a'),{href:url,download:'fio-curiosidade-'+session.code+'.csv'}).click();
+    URL.revokeObjectURL(url);
+  }
+
+  /* ── Dados derivados ── */
+  const hl=session?session.headlines[Math.max(0,session.currentRound-1)]:null;
+  const roundAnswers=session?session.answers.filter(a=>a.round===session.currentRound):[];
+  const screen=tab==='teacher'?tScreen:sScreen;
+  const timerCss=timerCls(timeLeft,session?.roundDuration||180);
+
+  /* ── RENDER ────────────────────────────────────────────── */
+  return e('div',null,
+
+    /* Nav */
+    page==='session'&&e('nav',{className:'nav'},
+      e('div',{className:'nav-brand'},e('i',{className:'ti ti-microscope','aria-hidden':true}),'Fio da Curiosidade'),
+      e('button',{className:'nav-tab'+(tab==='teacher'?' active':''),onClick:()=>setTab('teacher')},'Professor'),
+      e('button',{className:'nav-tab'+(tab==='student'?' active':''),onClick:()=>setTab('student')},'Aluno'),
+      e('div',{className:'nav-meta'},
+        /* cronômetro compacto na nav */
+        timeLeft!==null&&e('span',{className:'nav-timer '+timerCss},
+          timeLeft===0?'Tempo esgotado':fmtTime(timeLeft)
+        ),
+        session?.currentRound>0&&e('span',{className:'tag-round'},'Rodada '+session.currentRound+'/'+session.totalRounds),
+        session&&e('span',{className:'tag-code'},session.code)
+      )
+    ),
+
+    e('div',{className:'page'},
+
+      /* ── HOME ── */
+      page==='home'&&e('div',null,
+        e('div',{className:'home-hero'},
+          e('i',{className:'ti ti-microscope','aria-hidden':true}),
+          e('h1',null,'Fio da Curiosidade'),
+          e('p',null,'Atividade de formulação de perguntas científicas a partir de manchetes reais. Funciona como o Kahoot, com código de sessão.')
+        ),
+        connErr&&e('p',{style:{color:'#c00',fontSize:13,textAlign:'center',marginBottom:8}},connErr),
+        e('div',{className:'home-btns'},
+          e('button',{className:'home-btn home-btn-primary',onClick:createSession},
+            e('div',null,e('span',null,'Criar sessão'),e('span',{className:'home-btn-sub'},'Sou professor')),
+            e('i',{className:'ti ti-arrow-right','aria-hidden':true})
+          ),
+          e('button',{className:'home-btn',onClick:()=>{setSScreen('join');setTab('student');setPage('session');}},
+            e('div',null,e('span',null,'Entrar com código'),e('span',{className:'home-btn-sub'},'Sou aluno')),
+            e('i',{className:'ti ti-arrow-right','aria-hidden':true})
+          )
+        )
+      ),
+
+      /* ── PROFESSOR: LOBBY ── */
+      page==='session'&&tab==='teacher'&&screen==='lobby'&&session&&e('div',{style:{display:'flex',flexDirection:'column',gap:18}},
+        e(SHead,{title:'Sessão criada',sub:'Compartilhe o código abaixo com sua turma'}),
+        e('div',{className:'card',style:{textAlign:'center',padding:28}},
+          e('label',null,'Código da sessão'),
+          e('div',{className:'code-display',style:{margin:'8px 0 10px'}},session.code),
+          e('p',{className:'info'},session.students.length+' aluno'+(session.students.length!==1?'s':'')+' conectado'+(session.students.length!==1?'s':''))
+        ),
+        session.students.length>0&&e('div',{className:'card'},
+          e('label',null,'Alunos conectados'),
+          e('div',{className:'sep',style:{marginTop:10}},
+            session.students.map(st=>e('div',{key:st.id,className:'stu-row'},
+              e('span',{style:{fontSize:14}},st.name),
+              e('span',{className:'tag a-fis'},st.group)
+            ))
+          )
+        ),
+        /* Configuração de tempo por rodada */
+        e('div',{className:'card'},
+          e('label',null,'Tempo por rodada'),
+          e('select',{value:duration,onChange:ev=>setDuration(Number(ev.target.value)),style:{marginTop:4}},
+            e('option',{value:60},'1 minuto'),
+            e('option',{value:120},'2 minutos'),
+            e('option',{value:180},'3 minutos (padrão)'),
+            e('option',{value:300},'5 minutos'),
+            e('option',{value:420},'7 minutos'),
+            e('option',{value:600},'10 minutos')
+          ),
+          e('p',{className:'info',style:{marginTop:8}},'O cronômetro aparece para professor e alunos durante cada rodada.')
+        ),
+        e('div',{className:'row'},
+          e(Btn,{ghost:true,sm:true,onClick:demoStudents},'Simular alunos (demo)'),
+          e(Btn,{primary:true,disabled:session.students.length===0,onClick:startActivity},'Iniciar atividade')
+        ),
+        e('p',{className:'info'},session.totalRounds+' rodadas · '+session.headlines.length+' manchetes sorteadas aleatoriamente')
+      ),
+
+      /* ── PROFESSOR: MONITOR ── */
+      page==='session'&&tab==='teacher'&&screen==='monitor'&&hl&&e('div',{style:{display:'flex',flexDirection:'column',gap:18}},
+        e(SHead,{label:'Rodada '+session.currentRound+' de '+session.totalRounds,title:'Monitorando respostas',sub:roundAnswers.length+' pergunta'+(roundAnswers.length!==1?'s':'')+' recebida'+(roundAnswers.length!==1?'s':'')+' · '+session.students.length+' alunos'}),
+        e(TimerBlock,{timeLeft,total:session.roundDuration}),
+        e(HeadlineCard,{h:hl}),
+        roundAnswers.length>0&&e('div',{className:'card'},
+          e('label',null,'Perguntas recebidas'),
+          e('div',{className:'sep',style:{marginTop:10}},roundAnswers.map((a,i)=>e(QCard,{key:a.id,a,num:i+1})))
+        ),
+        e('div',{className:'row'},
+          e(Btn,{ghost:true,sm:true,onClick:demoAnswers},'Simular respostas (demo)'),
+          e(Btn,{primary:true,disabled:roundAnswers.length===0,onClick:showResults},'Ver resultados desta rodada')
+        )
+      ),
+
+      /* ── RESULTADOS DA RODADA (professor e aluno) ── */
+      page==='session'&&screen==='round-results'&&hl&&e('div',{style:{display:'flex',flexDirection:'column',gap:18}},
+        e(SHead,{label:'Resultados · Rodada '+session.currentRound,labelCls:'tag-ok',title:'Perguntas da turma',sub:'Discutam: quais são investigáveis? Envolvem Ciências da Natureza?'}),
+        e(HeadlineCard,{h:hl}),
+        e('div',{className:'card'},
+          e('label',null,roundAnswers.length+' pergunta'+(roundAnswers.length!==1?'s':'')+' formulada'+(roundAnswers.length!==1?'s':'')),
+          e('div',{className:'sep',style:{marginTop:10}},roundAnswers.map((a,i)=>e(QCard,{key:a.id,a,num:i+1})))
+        ),
+        tab==='teacher'
+          ?e(Btn,{primary:true,full:true,onClick:nextRound},session.currentRound>=session.totalRounds?'Ver resumo final':'Próxima rodada ('+(session.currentRound+1)+'/'+session.totalRounds+')')
+          :e('p',{className:'info',style:{textAlign:'center'}},'Aguardando o professor avançar para a próxima rodada...')
+      ),
+
+      /* ── PROFESSOR: RESUMO FINAL ── */
+      page==='session'&&tab==='teacher'&&screen==='summary'&&e('div',{style:{display:'flex',flexDirection:'column',gap:18}},
+        e(SHead,{label:'Atividade concluída',labelCls:'tag-ok',title:'Resumo — sessão '+session.code,sub:session.answers.length+' perguntas · '+session.students.length+' alunos · '+session.totalRounds+' rodadas'}),
+        session.headlines.map((h,idx)=>{
+          const ans=session.answers.filter(a=>a.round===idx+1);
+          return e('div',{key:h.id,className:'card'},
+            e('div',{style:{display:'flex',gap:8,marginBottom:10,flexWrap:'wrap'}},
+              e('span',{className:'tag-round'},'Rodada '+(idx+1)),
+              e(AreaTag,{area:h.area,ac:h.ac})
+            ),
+            e('p',{style:{fontWeight:500,fontSize:14,marginBottom:10,lineHeight:1.4}},h.title),
+            ans.length===0
+              ?e('p',{className:'info'},'Nenhuma resposta registrada')
+              :e('div',{className:'sep'},ans.map((a,i)=>e(QCard,{key:a.id,a,num:i+1})))
+          );
+        }),
+        e(Btn,{primary:true,full:true,onClick:exportCSV},'Exportar respostas (.csv)')
+      ),
+
+      /* ── ALUNO: ENTRAR ── */
+      page==='session'&&tab==='student'&&screen==='join'&&e('div',{style:{display:'flex',flexDirection:'column',gap:16}},
+        e(SHead,{title:'Entrar na sessão',sub:'Digite o código que seu professor está exibindo'}),
+        connErr&&e('p',{style:{color:'#c00',fontSize:13}},connErr),
+        e('div',null,e('label',null,'Código da sessão'),e('input',{value:codeInput,onChange:ev=>setCodeInput(ev.target.value.toUpperCase()),placeholder:'Ex: ABC123',style:{fontFamily:'monospace',fontSize:20,fontWeight:600,letterSpacing:'.1em',textTransform:'uppercase'}})),
+        e('div',null,e('label',null,'Seu nome'),e('input',{value:sName,onChange:ev=>setSName(ev.target.value),placeholder:'Ex: Maria Silva'})),
+        e('div',null,e('label',null,'Nome do grupo'),e('input',{value:sGroup,onChange:ev=>setSGroup(ev.target.value),placeholder:'Ex: Grupo A'})),
+        e(Btn,{primary:true,full:true,onClick:joinSession,disabled:!sName.trim()||!sGroup.trim()||!codeInput.trim()},'Entrar na sessão')
+      ),
+
+      /* ── ALUNO: AGUARDANDO ── */
+      page==='session'&&tab==='student'&&screen==='waiting'&&e('div',{className:'center-block'},
+        e('i',{className:'ti ti-clock','aria-hidden':true,style:{fontSize:40,color:'#1D9E75'}}),
+        e('div',{style:{textAlign:'center'}},
+          e('h2',{className:'screen-t'},'Você está dentro!'),
+          e('p',{className:'screen-s'},'Aguardando o professor iniciar a atividade...')
+        ),
+        e('div',{className:'tags-row'},
+          e('span',{className:'tag a-bio'},sName),
+          e('span',{className:'tag a-fis'},sGroup),
+          e('span',{className:'tag-code'},session?'Sessão '+session.code:'')
+        ),
+        session&&e('p',{className:'info'},session.students.length+' alunos na sessão')
+      ),
+
+      /* ── ALUNO: RODADA ── */
+      page==='session'&&tab==='student'&&screen==='round'&&hl&&e('div',{style:{display:'flex',flexDirection:'column',gap:18}},
+        e(SHead,{label:'Rodada '+session.currentRound+' de '+session.totalRounds,title:'Leia e formule uma pergunta',sub:'Leia a manchete abaixo e escreva a pergunta que ela te desperta'}),
+        e(TimerBlock,{timeLeft,total:session.roundDuration}),
+        e(HeadlineCard,{h:hl}),
+        !answered
+          ?e('div',{className:'card'},
+              e('label',null,'Sua pergunta, '+(sName.split(' ')[0]||'aluno')),
+              e('textarea',{value:answer,onChange:ev=>setAnswer(ev.target.value),placeholder:'Por que...? Como...? O que acontece se...? O que diferencia...?',style:{marginTop:6,marginBottom:12}}),
+              e(Btn,{primary:true,full:true,onClick:submitAnswer,disabled:!answer.trim()},'Enviar pergunta')
+            )
+          :e('div',{className:'card',style:{textAlign:'center',padding:28}},
+              e('i',{className:'ti ti-circle-check','aria-hidden':true,style:{fontSize:40,color:'#1D9E75'}}),
+              e('h3',{style:{fontSize:16,fontWeight:500,color:'#1D9E75',margin:'10px 0 6px'}},'Pergunta enviada!'),
+              e('p',{className:'screen-s'},'Aguardando os outros membros terminarem...')
+            )
+      ),
+
+      /* ── ALUNO: ENCERRADO ── */
+      page==='session'&&tab==='student'&&screen==='final'&&e('div',{className:'center-block'},
+        e('i',{className:'ti ti-confetti','aria-hidden':true,style:{fontSize:44,color:'#1D9E75'}}),
+        e('div',{style:{textAlign:'center'}},
+          e('h2',{className:'screen-t'},'Atividade concluída!'),
+          e('p',{className:'screen-s'},'Você formulou '+session.answers.filter(a=>a.studentName===sName).length+' pergunta'+(session.answers.filter(a=>a.studentName===sName).length!==1?'s':'')+' hoje.')
+        ),
+        session.answers.filter(a=>a.studentName===sName).length>0&&e('div',{className:'card',style:{width:'100%',textAlign:'left'}},
+          e('label',null,'Suas perguntas'),
+          e('div',{className:'sep',style:{marginTop:10}},
+            session.answers.filter(a=>a.studentName===sName).map((a,i)=>e(QCard,{key:a.id,a,num:i+1}))
+          )
+        )
+      )
+
+    ) /* .page */
+  ); /* root */
+}
+
+ReactDOM.render(e(App),document.getElementById('root'));
+</script>
+</body>
+</html>

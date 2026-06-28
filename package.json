@@ -1,0 +1,17 @@
+{
+  "name": "fio-da-curiosidade",
+  "version": "1.0.0",
+  "description": "Atividade de formulação de perguntas científicas — Projeto Integrador CNIT",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "npx nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
