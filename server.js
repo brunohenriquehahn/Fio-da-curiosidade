@@ -614,13 +614,14 @@ io.on('connection', (socket) => {
     io.to(code).emit('session-state', session);
   });
 
-  // Professor: iniciar atividade (recebe duração configurada no lobby)
-  socket.on('start-activity', ({ code, duration }) => {
+  // Professor: iniciar atividade (recebe duração e número de rodadas configurados no lobby)
+  socket.on('start-activity', ({ code, duration, totalRounds }) => {
     const session = sessions[code];
     if (!session || session.status !== 'lobby') return;
     session.status        = 'round-active';
     session.currentRound  = 1;
     session.roundDuration = (duration && duration > 0) ? duration : 180;
+    session.totalRounds   = (totalRounds && totalRounds > 0) ? totalRounds : 4;
     session.roundStartTime = new Date().toISOString();
     io.to(code).emit('session-state', session);
   });

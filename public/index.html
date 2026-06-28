@@ -88,6 +88,17 @@ p.screen-s{font-size:14px;color:#666}
 .tags-row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .duration-row{display:flex;gap:10px;align-items:flex-end}
 .duration-row>div{flex:1}
+/* configuração em duas colunas no lobby */
+.config-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+/* critérios de avaliação */
+.eval-bar{display:flex;gap:6px;flex-wrap:wrap;padding:6px 0 2px 35px}
+.eval-btn{border:0.5px solid #d1d0cb;background:#fff;border-radius:20px;padding:4px 11px;font-size:11px;font-weight:600;cursor:pointer;color:#999;font-family:inherit;transition:.12s;white-space:nowrap}
+.eval-btn:hover{border-color:#1D9E75;color:#1D9E75;background:#f0faf6}
+.eval-btn.on-inv{background:#D3F4E7;border-color:#1D9E75;color:#0A6B3A}
+.eval-btn.on-cn {background:#E0D9FA;border-color:#534AB7;color:#3C2D8A}
+.eval-btn.on-ori{background:#FEF0C4;border-color:#BA7517;color:#7A4800}
+.criteria-hint{background:#f8f8f7;border:0.5px solid #d1d0cb;border-radius:8px;padding:10px 14px;font-size:12px;color:#888;line-height:1.7}
+.criteria-hint b{color:#555;font-weight:600}
 </style>
 </head>
 <body>
@@ -178,6 +189,22 @@ function TimerBlock({timeLeft,total}){
   );
 }
 
+/* ── Barra de critérios de avaliação (professor) ────────── */
+function EvalBar({a,evals,toggleEval}){
+  const ev=evals[a.id]||{};
+  return e('div',{className:'eval-bar'},
+    e('button',{className:'eval-btn'+(ev.inv?' on-inv':''),onClick:()=>toggleEval(a.id,'inv')},
+      (ev.inv?'✓ ':'')+'Investigável'
+    ),
+    e('button',{className:'eval-btn'+(ev.cn?' on-cn':''),onClick:()=>toggleEval(a.id,'cn')},
+      (ev.cn?'✓ ':'')+'Envolve CN'
+    ),
+    e('button',{className:'eval-btn'+(ev.ori?' on-ori':''),onClick:()=>toggleEval(a.id,'ori')},
+      (ev.ori?'✓ ':'')+'Original'
+    )
+  );
+}
+
 /* ── App ─────────────────────────────────────────────────── */
 function App(){
   const [page,setPage]=useState('home');
@@ -193,8 +220,10 @@ function App(){
   const [answer,setAnswer]=useState('');
   const [answered,setAnswered]=useState(false);
   const [connErr,setConnErr]=useState('');
-  const [duration,setDuration]=useState(180); // segundos, configurado no lobby
-  const [timeLeft,setTimeLeft]=useState(null);  // segundos restantes (calculado localmente)
+  const [duration,setDuration]=useState(180);    // segundos, configurado no lobby
+  const [totalRounds,setTotalRounds]=useState(4); // número de rodadas, configurado no lobby
+  const [timeLeft,setTimeLeft]=useState(null);    // segundos restantes (calculado localmente)
+  const [evals,setEvals]=useState({});            // avaliações locais: {[answerId]:{inv,cn,ori}}
 
   /* Sync role ref */
   const setRole=useCallback(r=>{roleRef.current=r;setRoleState(r);},[]);
@@ -207,7 +236,11 @@ function App(){
   useEffect(()=>{
     socket.on('session-state',(s)=>{
       setSession(s);
-      if(roleRef.current==='teacher') setTScreen(prev=>T_MAP[s.status]||prev);
+      if(roleRef.current==='teacher'){
+        setTScreen(prev=>T_MAP[s.status]||prev);
+        // limpa avaliações ao iniciar nova rodada
+        if(s.status==='round-active') setEvals({});
+      }
       if(roleRef.current==='student'){
         setSScreen(prev=>{
           if(prev==='join')return prev;
@@ -267,11 +300,16 @@ function App(){
   }
 
   /* ── Ações do professor ── */
-  const startActivity=()=>socket.emit('start-activity',{code:session.code,duration});
+  const startActivity=()=>socket.emit('start-activity',{code:session.code,duration,totalRounds});
   const showResults=()=>socket.emit('show-results',{code:session.code});
   const nextRound=()=>socket.emit('next-round',{code:session.code});
   const demoStudents=()=>socket.emit('add-demo-students',{code:session.code});
   const demoAnswers=()=>socket.emit('add-demo-answers',{code:session.code});
+
+  /* ── Avaliação de perguntas (professor, local) ── */
+  function toggleEval(id,key){
+    setEvals(prev=>({...prev,[id]:{...(prev[id]||{}),[key]:!(prev[id]?.[key])}}));
+  }
 
   /* ── Ação do aluno ── */
   function submitAnswer(){
@@ -357,18 +395,34 @@ function App(){
             ))
           )
         ),
-        /* Configuração de tempo por rodada */
+        /* Configuração: tempo e número de rodadas */
         e('div',{className:'card'},
-          e('label',null,'Tempo por rodada'),
-          e('select',{value:duration,onChange:ev=>setDuration(Number(ev.target.value)),style:{marginTop:4}},
-            e('option',{value:60},'1 minuto'),
-            e('option',{value:120},'2 minutos'),
-            e('option',{value:180},'3 minutos (padrão)'),
-            e('option',{value:300},'5 minutos'),
-            e('option',{value:420},'7 minutos'),
-            e('option',{value:600},'10 minutos')
+          e('label',null,'Configuração da atividade'),
+          e('div',{className:'config-grid',style:{marginTop:8}},
+            e('div',null,
+              e('label',null,'Tempo por rodada'),
+              e('select',{value:duration,onChange:ev=>setDuration(Number(ev.target.value))},
+                e('option',{value:60},'1 minuto'),
+                e('option',{value:120},'2 minutos'),
+                e('option',{value:180},'3 minutos'),
+                e('option',{value:300},'5 minutos'),
+                e('option',{value:420},'7 minutos'),
+                e('option',{value:600},'10 minutos')
+              )
+            ),
+            e('div',null,
+              e('label',null,'Número de rodadas'),
+              e('select',{value:totalRounds,onChange:ev=>setTotalRounds(Number(ev.target.value))},
+                e('option',{value:2},'2 rodadas'),
+                e('option',{value:3},'3 rodadas'),
+                e('option',{value:4},'4 rodadas'),
+                e('option',{value:5},'5 rodadas'),
+                e('option',{value:6},'6 rodadas'),
+                e('option',{value:8},'8 rodadas')
+              )
+            )
           ),
-          e('p',{className:'info',style:{marginTop:8}},'O cronômetro aparece para professor e alunos durante cada rodada.')
+          e('p',{className:'info',style:{marginTop:10}},'O cronômetro aparece para professor e alunos. Cada rodada usa uma manchete diferente.')
         ),
         e('div',{className:'row'},
           e(Btn,{ghost:true,sm:true,onClick:demoStudents},'Simular alunos (demo)'),
@@ -396,9 +450,22 @@ function App(){
       page==='session'&&screen==='round-results'&&hl&&e('div',{style:{display:'flex',flexDirection:'column',gap:18}},
         e(SHead,{label:'Resultados · Rodada '+session.currentRound,labelCls:'tag-ok',title:'Perguntas da turma',sub:'Discutam: quais são investigáveis? Envolvem Ciências da Natureza?'}),
         e(HeadlineCard,{h:hl}),
+        /* dica de critérios — visível apenas ao professor */
+        tab==='teacher'&&e('div',{className:'criteria-hint'},
+          e('b',null,'Como avaliar cada pergunta:'),
+          ' ',
+          e('b',null,'Investigável'),' — pode ser respondida com uma pesquisa?  ',
+          e('b',null,'Envolve CN'),' — conecta Biologia, Física ou Química?  ',
+          e('b',null,'Original'),' — vai além do óbvio da manchete?'
+        ),
         e('div',{className:'card'},
           e('label',null,roundAnswers.length+' pergunta'+(roundAnswers.length!==1?'s':'')+' formulada'+(roundAnswers.length!==1?'s':'')),
-          e('div',{className:'sep',style:{marginTop:10}},roundAnswers.map((a,i)=>e(QCard,{key:a.id,a,num:i+1})))
+          e('div',{className:'sep',style:{marginTop:10}},
+            roundAnswers.map((a,i)=>e('div',{key:a.id},
+              e(QCard,{a,num:i+1}),
+              tab==='teacher'&&e(EvalBar,{a,evals,toggleEval})
+            ))
+          )
         ),
         tab==='teacher'
           ?e(Btn,{primary:true,full:true,onClick:nextRound},session.currentRound>=session.totalRounds?'Ver resumo final':'Próxima rodada ('+(session.currentRound+1)+'/'+session.totalRounds+')')
